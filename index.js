@@ -62,7 +62,7 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
 
     const db = client.db("zap_shift_db");
     const usersCollection = db.collection("users");
@@ -70,6 +70,7 @@ async function run() {
     const paymentCollection = db.collection("payments");
     const ridersCollection = db.collection("riders");
     const trackingsCollection = db.collection("trackings");
+    const blogsCollection = db.collection("blogs");
 
     //middleware for database access
     const verifyAdmin = async (req, res, next) => {
@@ -226,6 +227,20 @@ async function run() {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await ridersCollection.deleteOne(query);
+      res.send(result);
+    });
+
+    //blogs
+    app.get("/blogs", async(req,res)=> {
+      const blogs = await blogsCollection.find().sort({createdAt: -1}).toArray();
+      res.send(blogs);
+    })
+
+
+    app.get("/blogs/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await blogsCollection.findOne(query);
       res.send(result);
     });
 
