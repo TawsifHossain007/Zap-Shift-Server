@@ -9,7 +9,9 @@ const port = process.env.port || 3000;
 
 const admin = require("firebase-admin");
 
-const decoded = Buffer.from(process.env.FB_SERVICE_KEY, 'base64').toString('utf8')
+const decoded = Buffer.from(process.env.FB_SERVICE_KEY, "base64").toString(
+  "utf8",
+);
 const serviceAccount = JSON.parse(decoded);
 
 const { stat } = require("fs");
@@ -150,7 +152,11 @@ async function run() {
       res.send(result);
     });
 
-    app.patch("/users/:id/role",verifyFBToken,verifyAdmin,async (req, res) => {
+    app.patch(
+      "/users/:id/role",
+      verifyFBToken,
+      verifyAdmin,
+      async (req, res) => {
         const id = req.params.id;
         const roleInfo = req.body;
         const query = { _id: new ObjectId(id) };
@@ -162,7 +168,7 @@ async function run() {
         };
         const result = await usersCollection.updateOne(query, updatedDOC);
         res.send(result);
-      }
+      },
     );
 
     //riders
@@ -208,7 +214,7 @@ async function run() {
         };
         const userResult = await usersCollection.updateOne(
           userQuery,
-          updateUser
+          updateUser,
         );
       }
 
@@ -231,11 +237,13 @@ async function run() {
     });
 
     //blogs
-    app.get("/blogs", async(req,res)=> {
-      const blogs = await blogsCollection.find().sort({createdAt: -1}).toArray();
+    app.get("/blogs", async (req, res) => {
+      const blogs = await blogsCollection
+        .find()
+        .sort({ createdAt: -1 })
+        .toArray();
       res.send(blogs);
-    })
-
+    });
 
     app.get("/blogs/:id", async (req, res) => {
       const id = req.params.id;
@@ -267,15 +275,18 @@ async function run() {
     app.get("/parcels/rider", async (req, res) => {
       const { riderEmail, deliveryStatus } = req.query;
       const query = {};
+
       if (riderEmail) {
         query.riderEmail = riderEmail;
       }
 
-      if (deliveryStatus !== "parcel_delivered") {
-        // query.deliveryStatus = { $in: ["Rider_Assigned", "Rider_On_The_Way"] };
-        query.deliveryStatus = { $nin: ["parcel_delivered"] };
-      } else {
-        query.deliveryStatus = deliveryStatus;
+      // Only filter by status if explicitly provided
+      if (deliveryStatus && deliveryStatus !== "all") {
+        if (deliveryStatus === "parcel_delivered") {
+          query.deliveryStatus = deliveryStatus;
+        } else {
+          query.deliveryStatus = { $nin: ["parcel_delivered"] };
+        }
       }
 
       const cursor = parcelsCollection.find(query);
@@ -324,6 +335,7 @@ async function run() {
       const updatedDOC = {
         $set: {
           deliveryStatus: "Rider_Assigned",
+          AssignDate: new Date(),
           riderID: riderId,
           riderEmail: riderEmail,
           riderName: riderName,
@@ -340,7 +352,7 @@ async function run() {
       };
       const riderResult = await ridersCollection.updateOne(
         riderQuery,
-        riderUpdatedDOC
+        riderUpdatedDOC,
       );
 
       logTracking(trackingId, "Rider_Assigned");
@@ -354,6 +366,7 @@ async function run() {
       const updatedDOC = {
         $set: {
           deliveryStatus: deliveryStatus,
+          deliveredAt: deliveryStatus === "parcel_delivered" ? new Date() : null,
         },
       };
 
@@ -366,7 +379,7 @@ async function run() {
         };
         const riderResult = await ridersCollection.updateOne(
           riderQuery,
-          riderUpdatedDOC
+          riderUpdatedDOC,
         );
       }
       const result = await parcelsCollection.updateOne(query, updatedDOC);
@@ -453,7 +466,7 @@ async function run() {
                 deliveryStatus: "pending-pickup",
                 trackingId: trackingId,
               },
-            }
+            },
           );
 
           const payment = {
